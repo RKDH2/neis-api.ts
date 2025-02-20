@@ -24,7 +24,7 @@ pnpm add neis-api.ts
 * SpsTimetable
 * TiClrminfo
 
-## 사용법
+## 사용 방법 (예시)
 ```ts
 import NeisApi from "neis-api.ts";
 
