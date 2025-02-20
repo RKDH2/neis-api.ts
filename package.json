@@ -1,6 +1,5 @@
 {
   "name": "neis-api.ts",
-  "version": "0.0.0",
   "description": "Neis Open API Wrapper for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
