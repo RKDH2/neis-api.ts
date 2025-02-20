@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "eslint . --ignore-pattern .gitignore",
-    "test": "jest --roots tests",
+    "test": "jest --roots tests && tsc",
     "release": "semantic-release"
   },
   "repository": {
