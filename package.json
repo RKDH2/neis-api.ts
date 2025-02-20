@@ -10,6 +10,7 @@
     "lint": "eslint . --ignore-pattern .gitignore",
     "test": "jest --roots tests",
     "build": "rimraf dist && tsc",
+    "prepack": "pnpm build",
     "release": "semantic-release"
   },
   "repository": {
