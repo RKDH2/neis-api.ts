@@ -8,7 +8,8 @@
   },
   "scripts": {
     "lint": "eslint . --ignore-pattern .gitignore",
-    "test": "jest --roots tests && tsc",
+    "test": "jest --roots tests",
+    "build": "rimraf dist && tsc",
     "release": "semantic-release"
   },
   "repository": {
@@ -44,6 +45,7 @@
     "globals": "^15.14.0",
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
     "semantic-release": "^24.2.3",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
