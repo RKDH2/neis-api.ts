@@ -1,4 +1,4 @@
-import { NeisConfig, createNeisConfig } from '../../configs';
+import { NeisConfig, createNeisConfig } from '../configs';
 import { AcaInsTiInfoRequest } from '../types/requests/AcaInsTiInfo';
 import { ClassInfoRequest } from '../types/requests/ClassInfo';
 import { ElsTimetableRequest } from '../types/requests/ElsTimetable';

@@ -1,4 +1,4 @@
-import { NeisConfig } from '../../configs/index';
+import { NeisConfig } from '../configs/index';
 import { NeisApiError } from '../errors/errors';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
