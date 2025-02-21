@@ -1,4 +1,4 @@
-import { NeisConfig } from '../configs/';
+import { NeisConfig } from '../configs/index';
 import { NeisApiError } from '../errors/errors';
 import { AcaInsTiInfoResponse } from '../types/responses/AcaInsTiInfo';
 import { ClassInfoResponse } from '../types/responses/ClassInfo';
