@@ -32,10 +32,6 @@ export class Protocol {
         ...config.params,
       };
 
-      if (!config.params.Key) {
-        throw new Error('API key is required.');
-      }
-
       return config;
     });
 

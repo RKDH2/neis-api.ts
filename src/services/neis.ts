@@ -26,7 +26,7 @@ import { TiClrminfoResponse } from '../types/responses/TiClrminfo';
 import { Protocol } from './protocol';
 
 export class NeisApiService extends Protocol {
-  constructor(config: NeisConfig) {
+  constructor(config: NeisConfig = {}) {
     super(createNeisConfig(config));
   }
 

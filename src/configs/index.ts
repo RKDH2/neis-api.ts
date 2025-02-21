@@ -8,11 +8,17 @@ export type NeisConfig = {
 
 export const createNeisConfig = (
   config: Partial<NeisConfig> = {},
-): NeisConfig => ({
-  key: config.key,
-  type: 'json',
-  pIndex: '1',
-  pSize: '1',
-  timeout: 5000,
-  ...config,
-});
+): NeisConfig => {
+  if (!config.key) {
+    throw new Error('API key is required.');
+  }
+
+  return {
+    key: config.key,
+    type: 'json',
+    pIndex: '1',
+    pSize: '1',
+    timeout: 5000,
+    ...config,
+  };
+};
