@@ -9,7 +9,7 @@ export type NeisConfig = {
 export const createNeisConfig = (
   config: Partial<NeisConfig> = {},
 ): NeisConfig => ({
-  key: '',
+  key: config.key,
   type: 'json',
   pIndex: '1',
   pSize: '1',

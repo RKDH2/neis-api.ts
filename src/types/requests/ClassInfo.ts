@@ -1,8 +1,8 @@
 export type ClassInfoRequest = {
   /** 시도교육청코드 */
-  readonly ATPT_OFCDC_SC_CODE?: string;
+  readonly ATPT_OFCDC_SC_CODE: string;
   /** 행정표준코드 */
-  readonly SD_SCHUL_CODE?: string;
+  readonly SD_SCHUL_CODE: string;
   /** 학년도 */
   readonly AY?: string;
   /** 학년 */
