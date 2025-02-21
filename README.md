@@ -47,5 +47,7 @@ const fetch = async () => {
 fetch();
 ```
 
+***
+
 ### NEIS API 문서 및 정보 출처 링크
 * https://open.neis.go.kr/portal/mainPage.do
