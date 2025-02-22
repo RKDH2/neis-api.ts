@@ -3,7 +3,7 @@
 
 NEIS OPEN API를 쉽게 사용할 수 있는 API Wrapper 라이브러리 입니다.
 
-## 새로운 기능 (Version 1.7.0)
+## 새로운 기능 (Version =>1.7.0)
 **trackStatsEnabled**를 사용하여 **API의 HTTP 요청/응답**에 대한 통계를 간략하게 확인할 수 있다.
 
 사용자 선택에 따라 적용하거나 적용하지 않아도 된다.
