@@ -4,6 +4,12 @@ export type NeisConfig = {
   pIndex?: string;
   pSize?: string;
   timeout?: number;
+  trackStatsEnabled?: boolean;
+  trackStats?: (
+    endpoint: string,
+    responseTime: number,
+    success?: boolean,
+  ) => void;
 };
 
 export const createNeisConfig = (
@@ -19,6 +25,7 @@ export const createNeisConfig = (
     pIndex: config.pIndex,
     pSize: config.pSize,
     timeout: 5000,
+    trackStatsEnabled: false,
     ...config,
   };
 };
