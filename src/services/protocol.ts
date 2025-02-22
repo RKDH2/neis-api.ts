@@ -17,11 +17,21 @@ export class Protocol {
   private readonly rest: AxiosInstance;
   private readonly baseUrl = 'https://open.neis.go.kr/hub';
 
+  private trackStatsEnabled: boolean;
+  private trackStats: (
+    endpoint: string,
+    responseTime: number,
+    success: boolean,
+  ) => void;
+
   constructor(protected readonly params: NeisConfig) {
     this.rest = axios.create({
       baseURL: this.baseUrl,
       timeout: params.timeout || 5000,
     });
+
+    this.trackStatsEnabled = params.trackStatsEnabled || false;
+    this.trackStats = params.trackStats || this.defaultTrackStats;
 
     this.rest.interceptors.request.use((config) => {
       config.params = {
@@ -44,7 +54,23 @@ export class Protocol {
     );
   }
 
-  private async proccesData<T>(config: AxiosRequestConfig): Promise<T> {
+  private defaultTrackStats(
+    endpoint: string,
+    responseTime: number,
+    success: boolean,
+  ) {
+    if (success) {
+      console.log(
+        `[API Http Stats - Endpoint: ${endpoint} | Response Time: ${responseTime}ms]`,
+      );
+    } else {
+      console.log(
+        `[API Http Stats - Endpoint: ${endpoint} | Request failed | Response Time: ${responseTime}ms]`,
+      );
+    }
+  }
+
+  private async processData<T>(config: AxiosRequestConfig): Promise<T> {
     try {
       const { data } = await this.rest.request(config);
 
@@ -71,6 +97,30 @@ export class Protocol {
     }
   }
 
+  protected async fetchWithStats<T>(
+    endpoint: string,
+    params: NeisConfig,
+  ): Promise<T> {
+    const startTime = Date.now();
+    try {
+      const result = await this.get<T>(endpoint, params);
+      const responseTime = Date.now() - startTime;
+
+      if (this.trackStatsEnabled) {
+        this.trackStats(endpoint, responseTime, true);
+      }
+
+      return result;
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      if (this.trackStatsEnabled) {
+        this.trackStats(endpoint, responseTime, false);
+      }
+
+      throw error;
+    }
+  }
+
   protected async get<T>(endpoint: string, params: NeisConfig): Promise<T> {
     const config: AxiosRequestConfig = {
       url: endpoint,
@@ -78,78 +128,90 @@ export class Protocol {
       params,
       timeout: params.timeout || this.params.timeout,
     };
-    return this.proccesData<T>(config);
+    return this.processData<T>(config);
   }
 
   protected async fetchedAcaInsTiInfo(
     params: NeisConfig,
   ): Promise<AcaInsTiInfoResponse> {
-    return this.get<AcaInsTiInfoResponse>('acaInsTiInfo', params);
+    return this.fetchWithStats<AcaInsTiInfoResponse>('acaInsTiInfo', params);
   }
 
   protected async fetchedClassInfo(
     params: NeisConfig,
   ): Promise<ClassInfoResponse> {
-    return this.get<ClassInfoResponse>('classInfo', params);
+    return this.fetchWithStats<ClassInfoResponse>('classInfo', params);
   }
 
   protected async fetchedElsTimetable(
     params: NeisConfig,
   ): Promise<ElsTimetableResponse> {
-    return this.get<ElsTimetableResponse>('elsTimetable', params);
+    return this.fetchWithStats<ElsTimetableResponse>('elsTimetable', params);
   }
 
   protected async fetchedHisTimetable(
     params: NeisConfig,
   ): Promise<HisTimetableResponse> {
-    return this.get<HisTimetableResponse>('hisTimetable', params);
+    return this.fetchWithStats<HisTimetableResponse>('hisTimetable', params);
   }
 
   protected async fetchedMealServiceDietInfo(
     params: NeisConfig,
   ): Promise<MealServiceDietInfoResponse> {
-    return this.get<MealServiceDietInfoResponse>('mealServiceDietInfo', params);
+    return this.fetchWithStats<MealServiceDietInfoResponse>(
+      'mealServiceDietInfo',
+      params,
+    );
   }
 
   protected async fetchedMisTimetable(
     params: NeisConfig,
   ): Promise<HisTimetableResponse> {
-    return this.get<HisTimetableResponse>('misTimetable', params);
+    return this.fetchWithStats<HisTimetableResponse>('misTimetable', params);
   }
 
   protected async fetchedSchoolInfo(
     params: NeisConfig,
   ): Promise<SchoolInfoResponse> {
-    return this.get<SchoolInfoResponse>('schoolInfo', params);
+    return this.fetchWithStats<SchoolInfoResponse>('schoolInfo', params);
   }
 
   protected async fetchedSchoolMajorinfo(
     params: NeisConfig,
   ): Promise<SchoolMajorinfoResponse> {
-    return this.get<SchoolMajorinfoResponse>('schoolMajorinfo', params);
+    return this.fetchWithStats<SchoolMajorinfoResponse>(
+      'schoolMajorinfo',
+      params,
+    );
   }
 
   protected async fetchedSchoolSchedule(
     params: NeisConfig,
   ): Promise<SchoolScheduleResponse> {
-    return this.get<SchoolScheduleResponse>('SchoolSchedule', params);
+    return this.fetchWithStats<SchoolScheduleResponse>(
+      'SchoolSchedule',
+      params,
+    );
   }
 
   protected async fetchedSchulAflcoinfo(
     params: NeisConfig,
   ): Promise<SchulAflcoinfoResponse> {
-    return this.get<SchulAflcoinfoResponse>('schulAflcoinfo', params);
+    return this.fetchWithStats<SchulAflcoinfoResponse>(
+      'schulAflcoinfo',
+      params,
+    );
   }
 
   protected async fetchedSpsTimetable(
     params: NeisConfig,
   ): Promise<SpsTimetableResponse> {
-    return this.get<SpsTimetableResponse>('spsTimetable', params);
+    return this.fetchWithStats<SpsTimetableResponse>('spsTimetable', params);
   }
 
   protected async fetchedTiClrminfo(
     params: NeisConfig,
   ): Promise<TiClrminfoResponse> {
-    return this.get<TiClrminfoResponse>('tiClrminfo', params);
+    return this.fetchWithStats<TiClrminfoResponse>('tiClrminfo', params);
   }
 }
