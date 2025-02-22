@@ -16,8 +16,8 @@ export const createNeisConfig = (
   return {
     key: config.key,
     type: 'json',
-    pIndex: '1',
-    pSize: '1',
+    pIndex: config.pIndex,
+    pSize: config.pSize,
     timeout: 5000,
     ...config,
   };
