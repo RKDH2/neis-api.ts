@@ -17,7 +17,7 @@ export class Protocol {
   private readonly rest: AxiosInstance;
   private readonly baseUrl = 'https://open.neis.go.kr/hub';
 
-  private trackStatsEnabled: boolean;
+  private stats: boolean;
   private trackStats: (
     endpoint: string,
     responseTime: number,
@@ -30,7 +30,7 @@ export class Protocol {
       timeout: params.timeout || 5000,
     });
 
-    this.trackStatsEnabled = params.trackStatsEnabled || false;
+    this.stats = params.stats || false;
     this.trackStats = params.trackStats || this.defaultTrackStats;
 
     this.rest.interceptors.request.use((config) => {
@@ -106,14 +106,14 @@ export class Protocol {
       const result = await this.get<T>(endpoint, params);
       const responseTime = Date.now() - startTime;
 
-      if (this.trackStatsEnabled) {
+      if (this.stats) {
         this.trackStats(endpoint, responseTime, true);
       }
 
       return result;
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      if (this.trackStatsEnabled) {
+      if (this.stats) {
         this.trackStats(endpoint, responseTime, false);
       }
 
