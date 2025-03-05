@@ -40,8 +40,8 @@ pnpm add neis-api.ts
 ## 기본인자
 |변수명|타입|변수 설명|설명|
 |-----|-----|-----|-----|
-|KEY|STRING(필수)|인증키|기본값 : ❌|
-|Type|STRING(선택)|호출 문서(xml, json)|기본값 : json|
+|key|STRING(필수)|인증키|기본값 : ❌|
+|type|STRING(선택)|호출 문서(xml, json)|기본값 : json|
 |pIndex|INTEGER(선택)|페이지 위치|기본값 : 1|
 |pSize|INTEGER(선택)|페이지 당 신청 숫자|기본값 : 100|
 |stats|BOOLEAN(선택)|API 호출/응답 시간|기본값 : false|
