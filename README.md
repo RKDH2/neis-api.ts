@@ -1,5 +1,5 @@
 # neis-api.ts
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square) ![npm](https://img.shields.io/npm/v/neis-api.ts?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-blue.svg?color=green) ![npm](https://img.shields.io/npm/v/neis-api.ts?color=orange)
 
 NEIS OPEN API를 쉽게 사용할 수 있는 API Wrapper 라이브러리 입니다.
 
