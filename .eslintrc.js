@@ -16,7 +16,6 @@ module.exports = {
   },
   plugins: ['@typescript-eslint', 'prettier'],
   rules: {
-    indent: ['error', 2],
     'prettier/prettier': [
       'error',
       {

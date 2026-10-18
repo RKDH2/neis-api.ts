@@ -1,217 +1,109 @@
-import { NeisConfig } from '../configs/index';
-import { NeisApiError } from '../errors/errors';
-import { AcaInsTiInfoResponse } from '../types/responses/AcaInsTiInfo';
-import { ClassInfoResponse } from '../types/responses/ClassInfo';
-import { ElsTimetableResponse } from '../types/responses/ElsTimetable';
-import { HisTimetableResponse } from '../types/responses/HisTimetable';
-import { MealServiceDietInfoResponse } from '../types/responses/MealServiceDietInfo';
-import { SchoolInfoResponse } from '../types/responses/SchoolInfo';
-import { SchoolMajorinfoResponse } from '../types/responses/SchoolMajorinfo';
-import { SchoolScheduleResponse } from '../types/responses/SchoolSchedule';
-import { SchulAflcoinfoResponse } from '../types/responses/SchulAflcoinfo';
-import { SpsTimetableResponse } from '../types/responses/SpsTimetable';
-import { TiClrminfoResponse } from '../types/responses/TiClrminfo';
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { ResolvedNeisConfig } from '../configs/index';
+import { NeisApiError, toNeisApiError } from '../errors/errors';
+import axios, { AxiosInstance } from 'axios';
+
+const NO_DATA_CODE = 'INFO-200';
+
+type NeisResult = { CODE: string; MESSAGE: string };
+
+const defaultTrackStats = (
+  endpoint: string,
+  responseTime: number,
+  success?: boolean,
+) => {
+  const failed = success ? '' : ' | Request failed';
+  console.log(
+    `[API Http Stats - Endpoint: ${endpoint}${failed} | Response Time: ${responseTime}ms]`,
+  );
+};
+
+const parseResponse = <T>(data: unknown): T => {
+  if (!data || typeof data !== 'object') {
+    throw new NeisApiError('Unexpected response format', 'INVALID_RESPONSE');
+  }
+
+  const body = data as Record<string, unknown>;
+  const result = body.RESULT as NeisResult | undefined;
+
+  if (result) {
+    if (result.CODE === NO_DATA_CODE) {
+      return [] as unknown as T;
+    }
+    throw new NeisApiError(result.MESSAGE, result.CODE);
+  }
+
+  const blocks = Object.values(body)[0];
+  const rowBlock = Array.isArray(blocks)
+    ? blocks.find(
+        (block) => block && typeof block === 'object' && 'row' in block,
+      )
+    : undefined;
+
+  if (!rowBlock) {
+    throw new NeisApiError('Unexpected response format', 'INVALID_RESPONSE');
+  }
+
+  return rowBlock.row as T;
+};
 
 export class Protocol {
   private readonly rest: AxiosInstance;
-  private readonly baseUrl = 'https://open.neis.go.kr/hub';
 
-  private stats: boolean;
-  private trackStats: (
-    endpoint: string,
-    responseTime: number,
-    success: boolean,
-  ) => void;
-
-  constructor(protected readonly params: NeisConfig) {
+  constructor(protected readonly config: ResolvedNeisConfig) {
     this.rest = axios.create({
-      baseURL: this.baseUrl,
-      timeout: params.timeout || 5000,
+      baseURL: 'https://open.neis.go.kr/hub',
+      timeout: config.timeout,
     });
-
-    this.stats = params.stats || false;
-    this.trackStats = params.trackStats || this.defaultTrackStats;
-
-    this.rest.interceptors.request.use((config) => {
-      config.params = {
-        Key: params.key,
-        Type: params.type,
-        pIndex: params.pIndex,
-        pSize: params.pSize,
-        ...config.params,
-      };
-
-      return config;
-    });
-
-    this.rest.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        NeisApiError.handle(error);
-        return Promise.reject(error);
-      },
-    );
   }
 
-  private defaultTrackStats(
+  protected async get<TRes>(
     endpoint: string,
-    responseTime: number,
-    success: boolean,
-  ) {
-    if (success) {
-      console.log(
-        `[API Http Stats - Endpoint: ${endpoint} | Response Time: ${responseTime}ms]`,
-      );
-    } else {
-      console.log(
-        `[API Http Stats - Endpoint: ${endpoint} | Request failed | Response Time: ${responseTime}ms]`,
-      );
-    }
-  }
-
-  private async processData<T>(config: AxiosRequestConfig): Promise<T> {
-    try {
-      const { data } = await this.rest.request(config);
-
-      if (data.RESULT) {
-        const error = new Error(
-          `Code: ${data.RESULT.CODE} \n Message: ${data.RESULT.MESSAGE}`,
-        );
-        throw error;
-      }
-
-      const result = Object.values(data).flatMap((value) =>
-        Object.values(value as object),
-      )[1].row as T;
-      return result;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.code === 'ECONNABORTED') {
-          console.error('Request timeout exceeded.', error);
-          throw new Error('Request timeout exceeded.');
-        }
-      }
-      console.error('API call failed', error);
-      throw error;
-    }
-  }
-
-  protected async fetchWithStats<T>(
-    endpoint: string,
-    params: NeisConfig,
-  ): Promise<T> {
+    params: object = {},
+  ): Promise<TRes> {
     const startTime = Date.now();
+    let result: TRes;
+
     try {
-      const result = await this.get<T>(endpoint, params);
-      const responseTime = Date.now() - startTime;
-
-      if (this.stats) {
-        this.trackStats(endpoint, responseTime, true);
-      }
-
-      return result;
+      result = await this.request<TRes>(endpoint, params);
     } catch (error) {
-      const responseTime = Date.now() - startTime;
-      if (this.stats) {
-        this.trackStats(endpoint, responseTime, false);
-      }
+      const apiError =
+        error instanceof NeisApiError ? error : toNeisApiError(error);
 
-      throw error;
+      this.track(endpoint, startTime, false);
+      this.config.logger?.error(apiError);
+      throw apiError;
     }
+
+    this.track(endpoint, startTime, true);
+    return result;
   }
 
-  protected async get<T>(endpoint: string, params: NeisConfig): Promise<T> {
-    const config: AxiosRequestConfig = {
-      url: endpoint,
-      method: 'GET',
-      params,
-      timeout: params.timeout || this.params.timeout,
-    };
-    return this.processData<T>(config);
+  private async request<TRes>(endpoint: string, params: object): Promise<TRes> {
+    this.config.logger?.debug(`GET /${endpoint}`, params);
+    let data: unknown;
+
+    try {
+      const response = await this.rest.get(endpoint, {
+        params: {
+          Key: this.config.key,
+          Type: this.config.type,
+          pIndex: this.config.pIndex,
+          pSize: this.config.pSize,
+          ...params,
+        },
+      });
+      data = response.data;
+    } catch (error) {
+      throw toNeisApiError(error);
+    }
+
+    return parseResponse<TRes>(data);
   }
 
-  protected async fetchedAcaInsTiInfo(
-    params: NeisConfig,
-  ): Promise<AcaInsTiInfoResponse> {
-    return this.fetchWithStats<AcaInsTiInfoResponse>('acaInsTiInfo', params);
-  }
+  private track(endpoint: string, startTime: number, success: boolean) {
+    if (!this.config.stats) return;
 
-  protected async fetchedClassInfo(
-    params: NeisConfig,
-  ): Promise<ClassInfoResponse> {
-    return this.fetchWithStats<ClassInfoResponse>('classInfo', params);
-  }
-
-  protected async fetchedElsTimetable(
-    params: NeisConfig,
-  ): Promise<ElsTimetableResponse> {
-    return this.fetchWithStats<ElsTimetableResponse>('elsTimetable', params);
-  }
-
-  protected async fetchedHisTimetable(
-    params: NeisConfig,
-  ): Promise<HisTimetableResponse> {
-    return this.fetchWithStats<HisTimetableResponse>('hisTimetable', params);
-  }
-
-  protected async fetchedMealServiceDietInfo(
-    params: NeisConfig,
-  ): Promise<MealServiceDietInfoResponse> {
-    return this.fetchWithStats<MealServiceDietInfoResponse>(
-      'mealServiceDietInfo',
-      params,
-    );
-  }
-
-  protected async fetchedMisTimetable(
-    params: NeisConfig,
-  ): Promise<HisTimetableResponse> {
-    return this.fetchWithStats<HisTimetableResponse>('misTimetable', params);
-  }
-
-  protected async fetchedSchoolInfo(
-    params: NeisConfig,
-  ): Promise<SchoolInfoResponse> {
-    return this.fetchWithStats<SchoolInfoResponse>('schoolInfo', params);
-  }
-
-  protected async fetchedSchoolMajorinfo(
-    params: NeisConfig,
-  ): Promise<SchoolMajorinfoResponse> {
-    return this.fetchWithStats<SchoolMajorinfoResponse>(
-      'schoolMajorinfo',
-      params,
-    );
-  }
-
-  protected async fetchedSchoolSchedule(
-    params: NeisConfig,
-  ): Promise<SchoolScheduleResponse> {
-    return this.fetchWithStats<SchoolScheduleResponse>(
-      'SchoolSchedule',
-      params,
-    );
-  }
-
-  protected async fetchedSchulAflcoinfo(
-    params: NeisConfig,
-  ): Promise<SchulAflcoinfoResponse> {
-    return this.fetchWithStats<SchulAflcoinfoResponse>(
-      'schulAflcoinfo',
-      params,
-    );
-  }
-
-  protected async fetchedSpsTimetable(
-    params: NeisConfig,
-  ): Promise<SpsTimetableResponse> {
-    return this.fetchWithStats<SpsTimetableResponse>('spsTimetable', params);
-  }
-
-  protected async fetchedTiClrminfo(
-    params: NeisConfig,
-  ): Promise<TiClrminfoResponse> {
-    return this.fetchWithStats<TiClrminfoResponse>('tiClrminfo', params);
+    const trackStats = this.config.trackStats ?? defaultTrackStats;
+    trackStats(endpoint, Date.now() - startTime, success);
   }
 }
